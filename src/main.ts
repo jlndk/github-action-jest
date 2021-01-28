@@ -1,19 +1,26 @@
-import * as core from '@actions/core'
-import {wait} from './wait'
+import path, { sep } from 'path';
+import * as core from '@actions/core';
+import { shouldCommentCoverage } from './args';
+import { generateCommentBody, readCoverageFile } from './code-coverage';
+import updateOrCreateComment from './comment';
+import runJest from './run';
 
-async function run(): Promise<void> {
+async function main(): Promise<void> {
+  const workingDirectory = core.getInput('working-directory', { required: false });
+  const cwd = workingDirectory ? path.resolve(workingDirectory) : process.cwd();
+  const coverageFilePath = path.join(cwd + sep, 'jest.results.json');
+
   try {
-    const ms: string = core.getInput('milliseconds')
-    core.debug(`Waiting ${ms} milliseconds ...`) // debug is only output if you set the secret `ACTIONS_RUNNER_DEBUG` to true
+    await runJest();
 
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    core.setOutput('time', new Date().toTimeString())
+    if (shouldCommentCoverage()) {
+      const coverageFile = await readCoverageFile(coverageFilePath);
+      const commentContent = generateCommentBody(coverageFile);
+      await updateOrCreateComment(commentContent);
+    }
   } catch (error) {
-    core.setFailed(error.message)
+    core.setFailed(error.message);
   }
 }
 
-run()
+main();
