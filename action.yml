@@ -1,11 +1,22 @@
 name: 'github-action-jest'
 description: 'A github action for running jest. With code coverage!'
 author: 'jlndk'
-# inputs:
-#   milliseconds: # change this
-#     required: true
-#     description: 'input description here'
-#     default: 'default value if applicable'
+inputs:
+  test-command:
+    description: 'The test command that should be executed'
+    required: false
+    default: 'npm test'
+  working-directory:
+    describe: 'The subdirectory tests should be run in'
+    required: false
+  coverage-comment:
+    describe: 'Should this action post a comment on the current PR with code coverage information?'
+    required: false
+    default: 'true'
+  changes-only:
+    describe: 'Only run tests on files that have changed compared to the base branch'
+    required: false
+    default: 'false'
 runs:
   using: 'node12'
   main: 'dist/index.js'
