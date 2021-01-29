@@ -1,10 +1,10 @@
 import path from 'path';
 import { readFileSync } from 'fs';
-import istanbulCoverage from 'istanbul-lib-coverage';
+import { createCoverageMap, CoverageSummary, CoverageMap, CoverageMapData } from 'istanbul-lib-coverage';
+import type { FormattedTestResults } from '@jest/test-result/build/types';
 import { argv } from 'yargs';
 import { toHTMLTable } from './html';
 import { truncateLeft } from './util';
-import { readFile } from 'fs/promises';
 
 const rootPath = (argv.rootPath as string) || process.cwd();
 
@@ -12,20 +12,28 @@ type File = {
   relative: string;
   fileName: string;
   path: string;
-  coverage: istanbulCoverage.CoverageSummary;
+  coverage: CoverageSummary;
 };
 
 type Directories = {
   [key: string]: File[];
 };
 
-export async function readCoverageFile(coverageFilePath: string): Promise<istanbulCoverage.CoverageMap> {
-  return JSON.parse(await readFile(coverageFilePath, 'utf-8'));
+export function readCoverageFile(coverageFilePath: string): CoverageMapData {
+  const content = readFileSync(coverageFilePath, 'utf-8');
+
+  const results = JSON.parse(content) as FormattedTestResults;
+
+  if (!results.coverageMap) {
+    throw new Error('Could not read coverage results from file');
+  }
+
+  return (results.coverageMap as unknown) as CoverageMapData;
 }
 
-export function generateCommentBody(coverageMap: istanbulCoverage.CoverageMap): string {
+export function generateCommentBody(coverageMap: CoverageMapData): string {
   const { summaryTable, fullTable } = generateCoverageTable(coverageMap);
-  const lines: string[] = [
+  const lines = [
     '# Code Coverage :mag_right:',
     summaryTable,
     '', // Add empty line to make sure header still renders correctly
@@ -39,52 +47,35 @@ export function generateCommentBody(coverageMap: istanbulCoverage.CoverageMap): 
   return lines.join('\n');
 }
 
-function generateCoverageTable(
-  coverageMap: istanbulCoverage.CoverageMap
-): { summaryTable: string; fullTable: string } {
-  const summaryToRow = (f: istanbulCoverage.CoverageSummary): string[] => [
+function generateCoverageTable(coverageData: CoverageMapData): { summaryTable: string; fullTable: string } {
+  const summaryToRow = (f: CoverageSummary): string[] => [
     formatIfPoor(f.statements.pct),
     formatIfPoor(f.branches.pct),
     formatIfPoor(f.functions.pct),
     formatIfPoor(f.lines.pct),
   ];
 
-  const parseFile = (absolute: string): File => {
-    const relative = path.relative(rootPath, absolute);
-    const fileName = path.basename(relative);
-    const p = path.dirname(relative);
-    const coverage = coverageMap.fileCoverageFor(absolute).toSummary();
-    return { relative, fileName, path: p, coverage };
-  };
-
-  const groupByPath = (dirs: Directories, file: File): Directories => {
-    if (!(file.path in dirs)) {
-      dirs[file.path] = [];
-    }
-
-    dirs[file.path].push(file);
-
-    return dirs;
-  };
+  const coverageMap = createCoverageMap(coverageData);
 
   const headers = ['% Statements', '% Branch', '% Funcs', '% Lines'];
   const summary = summaryToRow(coverageMap.getCoverageSummary());
 
-  const files = coverageMap.files().map(parseFile).reduce(groupByPath, {});
+  const files = coverageMap
+    .files()
+    .map((path) => parseFile(coverageMap, path))
+    .reduce(groupByPath, {});
 
-  const rows = Object.entries(files)
-    .map(([dir, files]) => [
-      [`<b>${truncateLeft(dir, 50)}</b>`, '', '', '', ''], // TODO: Add metrics for directories by summing files
-      ...files.map((file) => [`<code>${file.fileName}</code>`, ...summaryToRow(file.coverage)]),
-    ])
-    .flat();
+  const rows = Object.entries(files).flatMap(([dir, files]) => {
+    // TODO: Add metrics for directories by summing files
+    const dirRow = [`<b>${truncateLeft(dir, 50)}</b>`, '', '', '', ''];
+    const fileRows = files.map((file) => [`<code>${file.fileName}</code>`, ...summaryToRow(file.coverage)]);
+    return [dirRow, ...fileRows];
+  });
 
-  const fullHeaders = ['File', ...headers];
-
-  const summaryTable = toHTMLTable(headers, [summary]);
-  const fullTable = toHTMLTable(fullHeaders, rows);
-
-  return { summaryTable, fullTable };
+  return {
+    summaryTable: toHTMLTable(headers, [summary]),
+    fullTable: toHTMLTable(['File', ...headers], rows),
+  };
 }
 
 function formatIfPoor(number: number): string {
@@ -98,4 +89,24 @@ function formatIfPoor(number: number): string {
     return `${number} :orange_circle:`;
   }
   return `${number} :red_circle:`;
+}
+
+function parseFile(coverageMap: CoverageMap, absolute: string): File {
+  const relative = path.relative(rootPath, absolute);
+  return {
+    relative,
+    fileName: path.basename(relative),
+    path: path.dirname(relative),
+    coverage: coverageMap.fileCoverageFor(absolute).toSummary(),
+  };
+}
+
+function groupByPath(dirs: Directories, file: File): Directories {
+  if (!(file.path in dirs)) {
+    dirs[file.path] = [];
+  }
+
+  dirs[file.path].push(file);
+
+  return dirs;
 }

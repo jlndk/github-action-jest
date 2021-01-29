@@ -7,19 +7,60 @@ on: # rebuild any PRs and main branch changes
       - 'releases/*'
 
 jobs:
-  build: # make sure build/ci work properly
+  build:
+    name: 'Build & Test'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          yarn install
-      - run: |
-          yarn run all
 
-  test: # make sure the action works on a clean machine without building
+      - name: Get Yarn Cache Directory Path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Cache Yarn
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            node_modules
+          key: ${{ runner.os }}-yarn-deps-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-deps-
+
+      - name: Install Dependencies
+        run: yarn --pure-lockfile --production=false
+
+      - name: Build
+        run: yarn run build
+
+      - name: Run linting
+        run: yarn run lint
+
+      - name: Bundle package
+        run: yarn run package
+
+      - name: Run tests
+        run: yarn test
+
+  failing-tests:
+    name: 'Failing tests (on purpose)'
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v2
-      - uses: ./
+
+      - name: Get Yarn Cache Directory Path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Cache Yarn
+        uses: actions/cache@v2
         with:
-          milliseconds: 1000
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            node_modules
+          key: ${{ runner.os }}-yarn-deps-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-deps-
+
+      - uses: ./
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

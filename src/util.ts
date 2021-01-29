@@ -1,5 +1,5 @@
 export function truncateLeft(str: string, len: number): string {
-  if (len > str.length) {
+  if (len >= str.length) {
     return str;
   }
 

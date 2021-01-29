@@ -1,26 +1,26 @@
 {
-  "name": "typescript-action",
-  "version": "0.0.0",
+  "name": "github-action-jest",
+  "version": "0.0.1",
   "private": true,
-  "description": "TypeScript template action",
+  "description": "A github action for running jest. With code coverage!",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
     "lint": "eslint src/**/*.ts",
     "package": "ncc build --source-map --license licenses.txt",
-    "test": "jest",
-    "all": "yarn run build && yarn run lint --fix && yarn run package && yarn test"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/jlndk/github-action-jest.git"
   },
   "keywords": [
     "actions",
     "node",
-    "setup"
+    "jest",
+    "code-coverage"
   ],
-  "author": "",
+  "author": "jlndk",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.2.6",

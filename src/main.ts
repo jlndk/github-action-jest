@@ -1,22 +1,40 @@
 import path, { sep } from 'path';
 import * as core from '@actions/core';
-import { shouldCommentCoverage } from './args';
+import { shouldCommentCoverage, shouldRunOnlyChangedFiles, getGithubToken } from './args';
 import { generateCommentBody, readCoverageFile } from './code-coverage';
 import updateOrCreateComment from './comment';
-import runJest from './run';
+import runJest, { getJestCommand } from './run';
 
 async function main(): Promise<void> {
-  const workingDirectory = core.getInput('working-directory', { required: false });
-  const cwd = workingDirectory ? path.resolve(workingDirectory) : process.cwd();
-  const coverageFilePath = path.join(cwd + sep, 'jest.results.json');
-
   try {
-    await runJest();
+    // Get args
+    const baseCommand = core.getInput('test-command', { required: false }) ?? 'npm test';
+    const workingDirectory = core.getInput('working-directory', { required: false });
+    const githubToken = getGithubToken();
 
+    // Compute paths
+    const cwd = workingDirectory ? path.resolve(workingDirectory) : process.cwd();
+    const coverageFilePath = path.join(cwd + sep, 'jest.results.json');
+
+    // Make the jest command
+    const cmd = getJestCommand({
+      coverageFilePath,
+      baseCommand,
+      runOnlyChangedFiles: shouldRunOnlyChangedFiles(),
+      withCoverage: shouldCommentCoverage(),
+    });
+
+    // execute jest
+    await runJest({ cmd, cwd });
+
+    // If we should post a coverage comment
     if (shouldCommentCoverage()) {
-      const coverageFile = await readCoverageFile(coverageFilePath);
+      // Read the coverage file
+      const coverageFile = readCoverageFile(coverageFilePath);
+      // Make the comment content
       const commentContent = generateCommentBody(coverageFile);
-      await updateOrCreateComment(commentContent);
+      // Post the comment.
+      await updateOrCreateComment(commentContent, githubToken);
     }
   } catch (error) {
     core.setFailed(error.message);
