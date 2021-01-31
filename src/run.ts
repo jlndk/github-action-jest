@@ -1,7 +1,10 @@
+import { readFileSync } from 'fs';
 import { exec } from '@actions/exec';
 import { context } from '@actions/github';
+import type { FormattedTestResults } from '@jest/test-result/build/types';
 
 export type RunJestOptions = {
+  coverageFilePath: string;
   cmd: string;
   cwd: string;
 };
@@ -16,8 +19,22 @@ export type GetJestCommandArgs = MakeJestArgs & {
   baseCommand: string;
 };
 
-export default async function runJest({ cmd, cwd }: RunJestOptions): Promise<number> {
-  return await exec(cmd, [], { silent: true, cwd: cwd });
+export default async function runJest({
+  cmd,
+  cwd,
+  coverageFilePath,
+}: RunJestOptions): Promise<FormattedTestResults> {
+  await exec(cmd, [], { cwd, silent: true, ignoreReturnCode: true });
+
+  const content = readFileSync(coverageFilePath, 'utf-8');
+
+  const results = JSON.parse(content) as FormattedTestResults;
+
+  if (!results) {
+    throw new Error('Could not read test results from file');
+  }
+
+  return results;
 }
 
 export function getJestCommand({ baseCommand, ...rest }: GetJestCommandArgs): string {

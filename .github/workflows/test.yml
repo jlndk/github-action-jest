@@ -52,8 +52,13 @@ jobs:
         run: yarn --pure-lockfile --production=false
 
       - name: Build
+        run: yarn run build
+
+      - name: Package
         run: yarn run package
 
       - uses: ./
+        with:
+          test-command: yarn test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

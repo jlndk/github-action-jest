@@ -17,6 +17,10 @@ inputs:
     describe: 'Only run tests on files that have changed compared to the base branch'
     required: false
     default: 'false'
+  dry-run:
+    describe: 'If true, the content of the code coverage comment will be printed as debug output instead of actually submitting it.'
+    required: false
+    default: 'false'
 runs:
   using: 'node12'
   main: 'dist/index.js'

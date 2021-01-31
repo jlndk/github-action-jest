@@ -1,4 +1,3 @@
-import { readFileSync } from 'fs';
 import { createCoverageMap, CoverageMap, CoverageMapData } from 'istanbul-lib-coverage';
 import type { FormattedTestResults } from '@jest/test-result/build/types';
 import { toHTMLTable } from '../html';
@@ -7,19 +6,9 @@ import { coverageToRow, directoriesToRows } from './format';
 
 const headers = ['% Statements', '% Branch', '% Funcs', '% Lines'];
 
-export function readCoverageFile(coverageFilePath: string): CoverageMapData {
-  const content = readFileSync(coverageFilePath, 'utf-8');
+export function generateCommentBody(results: FormattedTestResults): string {
+  const coverageMap = (results.coverageMap as unknown) as CoverageMapData;
 
-  const results = JSON.parse(content) as FormattedTestResults;
-
-  if (!results.coverageMap) {
-    throw new Error('Could not read coverage results from file');
-  }
-
-  return (results.coverageMap as unknown) as CoverageMapData;
-}
-
-export function generateCommentBody(coverageMap: CoverageMapData): string {
   const { summaryTable, fullTable } = generateCoverageTable(coverageMap);
 
   const lines = [

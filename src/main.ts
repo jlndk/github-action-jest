@@ -1,46 +1,53 @@
 import path, { sep } from 'path';
 import * as core from '@actions/core';
-import { shouldCommentCoverage, shouldRunOnlyChangedFiles, getGithubToken } from './args';
-import { generateCommentBody, readCoverageFile } from './coverage';
+import { getGithubToken, hasBooleanArg } from './args';
+import { generateCommentBody } from './coverage';
 import updateOrCreateComment from './comment';
 import runJest, { getJestCommand } from './run';
 
 async function main(): Promise<void> {
-  try {
-    // Get args
-    const baseCommand = core.getInput('test-command', { required: false }) ?? 'npm test';
-    console.log(baseCommand);
+  // Get args
+  const baseCommand = core.getInput('test-command', { required: false }) ?? 'npm test';
+  const workingDirectory = core.getInput('working-directory', { required: false });
+  const shouldCommentCoverage = hasBooleanArg('coverage-comment');
+  const dryRun = hasBooleanArg('dry-run');
+  const runOnlyChangedFiles = hasBooleanArg('changes-only');
 
-    const workingDirectory = core.getInput('working-directory', { required: false });
-    const githubToken = getGithubToken();
+  // Compute paths
+  const cwd = workingDirectory ? path.resolve(workingDirectory) : process.cwd();
+  const coverageFilePath = path.join(cwd + sep, 'jest.results.json');
 
-    // Compute paths
-    const cwd = workingDirectory ? path.resolve(workingDirectory) : process.cwd();
-    const coverageFilePath = path.join(cwd + sep, 'jest.results.json');
+  // Make the jest command
+  const cmd = getJestCommand({
+    coverageFilePath,
+    baseCommand,
+    runOnlyChangedFiles,
+    withCoverage: shouldCommentCoverage,
+  });
 
-    // Make the jest command
-    const cmd = getJestCommand({
-      coverageFilePath,
-      baseCommand,
-      runOnlyChangedFiles: shouldRunOnlyChangedFiles(),
-      withCoverage: shouldCommentCoverage(),
-    });
+  core.info('Executing jest');
 
-    // execute jest
-    await runJest({ cmd, cwd });
+  // execute jest
+  const results = await runJest({ cmd, cwd, coverageFilePath });
 
-    // If we should post a coverage comment
-    if (shouldCommentCoverage()) {
-      // Read the coverage file
-      const coverageFile = readCoverageFile(coverageFilePath);
-      // Make the comment content
-      const commentContent = generateCommentBody(coverageFile);
+  // If we should post a coverage comment
+  if (shouldCommentCoverage) {
+    core.info('Generating coverage table');
+    // Make the comment content
+    const commentContent = generateCommentBody(results);
+
+    if (dryRun) {
+      core.debug(`Dry run detected: Here's the content of the comment:`);
+      core.debug(commentContent);
+    } else {
+      core.info('Posting comment');
+      const githubToken = getGithubToken();
       // Post the comment.
       await updateOrCreateComment(commentContent, githubToken);
     }
-  } catch (error) {
-    core.setFailed(error.message);
   }
 }
 
-main();
+main().catch((err) => {
+  core.setFailed(err.message);
+});

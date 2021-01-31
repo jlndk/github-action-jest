@@ -25,8 +25,8 @@ describe('runJest', () => {
     });
 
     expect(exec).toBeCalledWith('yarn test', [], {
-      silent: true,
       cwd: './',
+      // silent: true,
     });
   });
 });
