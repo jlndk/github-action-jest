@@ -23,8 +23,14 @@ export default async function updateOrCreateComment(
   };
 
   if (ourOutdatedComment !== undefined) {
-    await octokit.issues.updateComment({ ...requestData, comment_id: ourOutdatedComment.id });
+    await octokit.issues.updateComment({
+      ...requestData,
+      comment_id: ourOutdatedComment.id,
+    });
   } else {
-    await octokit.issues.createComment({ ...requestData, issue_number: context.payload.number });
+    await octokit.issues.createComment({
+      ...requestData,
+      issue_number: context.payload.number,
+    });
   }
 }

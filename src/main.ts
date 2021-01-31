@@ -1,7 +1,7 @@
 import path, { sep } from 'path';
 import * as core from '@actions/core';
 import { shouldCommentCoverage, shouldRunOnlyChangedFiles, getGithubToken } from './args';
-import { generateCommentBody, readCoverageFile } from './code-coverage';
+import { generateCommentBody, readCoverageFile } from './coverage';
 import updateOrCreateComment from './comment';
 import runJest, { getJestCommand } from './run';
 
