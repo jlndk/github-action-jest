@@ -73,7 +73,9 @@ describe('getJestCommand', () => {
       runOnlyChangedFiles: false,
     });
 
-    expect(actual).toEqual('yarn run test --testLocationInResults --json --outputFile=foo.json');
+    expect(actual).toEqual(
+      'yarn run test --testLocationInResults --json --outputFile=foo.json'
+    );
   });
 
   it('adds hyphern before args for some runners', () => {
@@ -89,7 +91,9 @@ describe('getJestCommand', () => {
         runOnlyChangedFiles: false,
       });
 
-      expect(actual).toEqual(`${runner} test -- --testLocationInResults --json --outputFile=foo.json`);
+      expect(actual).toEqual(
+        `${runner} test -- --testLocationInResults --json --outputFile=foo.json`
+      );
     }
   });
 });

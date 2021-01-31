@@ -47,6 +47,13 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        run: yarn --pure-lockfile --production=false
+
+      - name: Build
+        run: yarn run package
+
       - uses: ./
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

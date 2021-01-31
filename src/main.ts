@@ -9,6 +9,8 @@ async function main(): Promise<void> {
   try {
     // Get args
     const baseCommand = core.getInput('test-command', { required: false }) ?? 'npm test';
+    console.log(baseCommand);
+
     const workingDirectory = core.getInput('working-directory', { required: false });
     const githubToken = getGithubToken();
 
