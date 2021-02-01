@@ -1,6 +1,6 @@
 {
   "name": "github-action-jest",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "description": "A github action for running jest. With code coverage!",
   "main": "lib/main.js",
@@ -17,6 +17,7 @@
   },
   "keywords": [
     "actions",
+    "ci",
     "node",
     "jest",
     "code-coverage"
