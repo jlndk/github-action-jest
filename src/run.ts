@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { exec } from '@actions/exec';
 import { context } from '@actions/github';
 import type { FormattedTestResults } from '@jest/test-result/build/types';
+import { debug, endGroup, startGroup } from '@actions/core';
 
 export type RunJestOptions = {
   coverageFilePath: string;
@@ -24,7 +25,10 @@ export default async function runJest({
   cwd,
   coverageFilePath,
 }: RunJestOptions): Promise<FormattedTestResults> {
-  await exec(cmd, [], { cwd, silent: true, ignoreReturnCode: true });
+  startGroup('Jest output');
+  const statusCode = await exec(cmd, [], { cwd, ignoreReturnCode: true });
+  debug(`Jest exited with status code: ${statusCode}`);
+  endGroup();
 
   const content = readFileSync(coverageFilePath, 'utf-8');
 

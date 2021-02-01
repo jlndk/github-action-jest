@@ -28,6 +28,7 @@ describe.skip('runJest', () => {
 
     expect(exec).toBeCalledWith('yarn test', [], {
       cwd: './',
+      ignoreReturnCode: true,
     });
   });
 });
