@@ -1,6 +1,6 @@
 import { getInput } from '@actions/core';
 
-export function hasBooleanArg(key: string, required = false): boolean {
+export function getBooleanArg(key: string, required = false): boolean {
   return Boolean(JSON.parse(getInput(key, { required })));
 }
 
