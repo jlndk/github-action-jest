@@ -10,4 +10,5 @@ module.exports = {
   testEnvironment: 'node',
   testRunner: 'jest-circus/runner',
   verbose: true,
+  testPathIgnorePatterns: ['<rootDir>/src/demo_tests/'],
 };
