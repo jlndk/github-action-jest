@@ -1,15 +1,16 @@
-import { createCoverageMap, CoverageMap, CoverageMapData } from 'istanbul-lib-coverage';
-import type { FormattedTestResults } from '@jest/test-result/build/types';
+import { createCoverageMap, CoverageMap } from 'istanbul-lib-coverage';
 import { toHTMLTable } from '../html';
 import { getFilesByDirectory } from './file';
 import { coverageToRow, directoriesToRows } from './format';
 
 const headers = ['% Statements', '% Branch', '% Funcs', '% Lines'];
 
-export function generateCommentBody(results: FormattedTestResults): string {
-  const coverageMap = (results.coverageMap as unknown) as CoverageMapData;
+export function generateCommentBody(data: CoverageMap): string {
+  // Create the coverage map object from the raw data
+  const map = createCoverageMap(data);
 
-  const { summaryTable, fullTable } = generateCoverageTable(coverageMap);
+  const summaryTable = createSummaryTable(map);
+  const fullTable = createFullTable(map);
 
   const lines = [
     '# Code Coverage :mag_right:',
@@ -23,18 +24,6 @@ export function generateCommentBody(results: FormattedTestResults): string {
   ];
 
   return lines.join('\n');
-}
-
-export function generateCoverageTable(
-  data: CoverageMapData
-): { summaryTable: string; fullTable: string } {
-  // Create the coverage map object from the raw data
-  const map = createCoverageMap(data);
-
-  return {
-    summaryTable: createSummaryTable(map),
-    fullTable: createFullTable(map),
-  };
 }
 
 export function createSummaryTable(coverageMap: CoverageMap): string {

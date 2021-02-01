@@ -8,23 +8,16 @@ require('./sourcemap-register.js');module.exports =
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getGithubToken = exports.shouldRunOnlyChangedFiles = exports.shouldCommentCoverage = exports.hasBooleanArg = void 0;
+exports.getGithubToken = exports.hasBooleanArg = void 0;
 const core_1 = __webpack_require__(2186);
 function hasBooleanArg(key, required = false) {
     return Boolean(JSON.parse(core_1.getInput(key, { required })));
 }
 exports.hasBooleanArg = hasBooleanArg;
-function shouldCommentCoverage() {
-    return hasBooleanArg('coverage-comment');
-}
-exports.shouldCommentCoverage = shouldCommentCoverage;
-function shouldRunOnlyChangedFiles() {
-    return hasBooleanArg('changes-only');
-}
-exports.shouldRunOnlyChangedFiles = shouldRunOnlyChangedFiles;
 function getGithubToken() {
     const token = process.env.GITHUB_TOKEN;
-    if (token === undefined) {
+    // Apparently the env var can be undefined as a string sometimes -_-'
+    if (token == 'undefined' || token == undefined) {
         throw new Error('GITHUB_TOKEN not set.');
     }
     return token;
@@ -168,24 +161,17 @@ exports.coveragePercentToString = coveragePercentToString;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createFullTable = exports.createSummaryTable = exports.generateCoverageTable = exports.generateCommentBody = exports.readCoverageFile = void 0;
-const fs_1 = __webpack_require__(5747);
+exports.createFullTable = exports.createSummaryTable = exports.generateCommentBody = void 0;
 const istanbul_lib_coverage_1 = __webpack_require__(3896);
 const html_1 = __webpack_require__(8444);
 const file_1 = __webpack_require__(5344);
 const format_1 = __webpack_require__(8220);
 const headers = ['% Statements', '% Branch', '% Funcs', '% Lines'];
-function readCoverageFile(coverageFilePath) {
-    const content = fs_1.readFileSync(coverageFilePath, 'utf-8');
-    const results = JSON.parse(content);
-    if (!results.coverageMap) {
-        throw new Error('Could not read coverage results from file');
-    }
-    return results.coverageMap;
-}
-exports.readCoverageFile = readCoverageFile;
-function generateCommentBody(coverageMap) {
-    const { summaryTable, fullTable } = generateCoverageTable(coverageMap);
+function generateCommentBody(data) {
+    // Create the coverage map object from the raw data
+    const map = istanbul_lib_coverage_1.createCoverageMap(data);
+    const summaryTable = createSummaryTable(map);
+    const fullTable = createFullTable(map);
     const lines = [
         '# Code Coverage :mag_right:',
         summaryTable,
@@ -199,15 +185,6 @@ function generateCommentBody(coverageMap) {
     return lines.join('\n');
 }
 exports.generateCommentBody = generateCommentBody;
-function generateCoverageTable(data) {
-    // Create the coverage map object from the raw data
-    const map = istanbul_lib_coverage_1.createCoverageMap(data);
-    return {
-        summaryTable: createSummaryTable(map),
-        fullTable: createFullTable(map),
-    };
-}
-exports.generateCoverageTable = generateCoverageTable;
 function createSummaryTable(coverageMap) {
     // Create row for summary table
     const summary = format_1.coverageToRow(coverageMap.getCoverageSummary());
@@ -284,40 +261,56 @@ const args_1 = __webpack_require__(4133);
 const coverage_1 = __webpack_require__(9832);
 const comment_1 = __importDefault(__webpack_require__(1667));
 const run_1 = __importStar(__webpack_require__(7884));
+const testResults_1 = __webpack_require__(2799);
 async function main() {
     var _a;
-    try {
-        // Get args
-        const baseCommand = (_a = core.getInput('test-command', { required: false })) !== null && _a !== void 0 ? _a : 'npm test';
-        const workingDirectory = core.getInput('working-directory', { required: false });
-        const githubToken = args_1.getGithubToken();
-        // Compute paths
-        const cwd = workingDirectory ? path_1.default.resolve(workingDirectory) : process.cwd();
-        const coverageFilePath = path_1.default.join(cwd + path_1.sep, 'jest.results.json');
-        // Make the jest command
-        const cmd = run_1.getJestCommand({
-            coverageFilePath,
-            baseCommand,
-            runOnlyChangedFiles: args_1.shouldRunOnlyChangedFiles(),
-            withCoverage: args_1.shouldCommentCoverage(),
-        });
-        // execute jest
-        await run_1.default({ cmd, cwd });
-        // If we should post a coverage comment
-        if (args_1.shouldCommentCoverage()) {
-            // Read the coverage file
-            const coverageFile = coverage_1.readCoverageFile(coverageFilePath);
-            // Make the comment content
-            const commentContent = coverage_1.generateCommentBody(coverageFile);
-            // Post the comment.
-            await comment_1.default(commentContent, githubToken);
-        }
+    // Get args
+    const baseCommand = (_a = core.getInput('test-command', { required: false })) !== null && _a !== void 0 ? _a : 'npm test';
+    const workingDirectory = core.getInput('working-directory', { required: false });
+    const shouldCommentCoverage = args_1.hasBooleanArg('coverage-comment');
+    const dryRun = args_1.hasBooleanArg('dry-run');
+    const runOnlyChangedFiles = args_1.hasBooleanArg('changes-only');
+    // Compute paths
+    const cwd = workingDirectory ? path_1.default.resolve(workingDirectory) : process.cwd();
+    const coverageFilePath = path_1.default.join(cwd + path_1.sep, 'jest.results.json');
+    // Make the jest command
+    const cmd = run_1.getJestCommand({
+        coverageFilePath,
+        baseCommand,
+        runOnlyChangedFiles,
+        withCoverage: shouldCommentCoverage,
+    });
+    core.info('Executing jest');
+    // execute jest
+    const results = await run_1.default({ cmd, cwd, coverageFilePath });
+    core.info('Reporting test results');
+    testResults_1.reportTestResults(results);
+    // Return early if we should not post code coverage comment
+    if (!shouldCommentCoverage) {
+        core.info('Code coverage commenting is disabled. Skipping...');
+        return;
     }
-    catch (error) {
-        core.setFailed(error.message);
+    const coverageMap = results.coverageMap;
+    if (!coverageMap) {
+        throw new Error('Could not find coverage info in jest results file');
+    }
+    core.info('Generating coverage table');
+    // Make the comment content
+    const commentContent = coverage_1.generateCommentBody(coverageMap);
+    if (dryRun) {
+        core.debug(`Dry run detected: Here's the content of the comment:`);
+        core.debug(commentContent);
+    }
+    else {
+        core.info('Posting comment');
+        const githubToken = args_1.getGithubToken();
+        // Post the comment.
+        await comment_1.default(commentContent, githubToken);
     }
 }
-main();
+main().catch((err) => {
+    core.setFailed(err.message);
+});
 
 
 /***/ }),
@@ -329,10 +322,17 @@ main();
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.makeJestArgs = exports.getJestCommand = void 0;
+const fs_1 = __webpack_require__(5747);
 const exec_1 = __webpack_require__(1514);
 const github_1 = __webpack_require__(5438);
-async function runJest({ cmd, cwd }) {
-    return await exec_1.exec(cmd, [], { silent: true, cwd: cwd });
+async function runJest({ cmd, cwd, coverageFilePath, }) {
+    await exec_1.exec(cmd, [], { cwd, silent: true, ignoreReturnCode: true });
+    const content = fs_1.readFileSync(coverageFilePath, 'utf-8');
+    const results = JSON.parse(content);
+    if (!results) {
+        throw new Error('Could not read test results from file');
+    }
+    return results;
 }
 exports.default = runJest;
 function getJestCommand({ baseCommand, ...rest }) {
@@ -357,6 +357,44 @@ function makeJestArgs({ coverageFilePath, withCoverage, runOnlyChangedFiles, }) 
     return args;
 }
 exports.makeJestArgs = makeJestArgs;
+
+
+/***/ }),
+
+/***/ 2799:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.reportTestResults = void 0;
+const core_1 = __webpack_require__(2186);
+const command_1 = __webpack_require__(7351);
+const regex = /\((.+?):(\d+):(\d+)\)/;
+function reportTestResults(result) {
+    var _a;
+    if (result.numFailedTests == 0) {
+        return;
+    }
+    core_1.startGroup('Jest Annotations');
+    for (const testResult of result.testResults) {
+        for (const assertion of testResult.assertionResults) {
+            (_a = assertion === null || assertion === void 0 ? void 0 : assertion.failureMessages) === null || _a === void 0 ? void 0 : _a.forEach((msg) => {
+                const match = regex.exec(msg);
+                if (match && match.length > 2) {
+                    const args = {
+                        file: match[1],
+                        line: match[2],
+                        col: match[3],
+                    };
+                    command_1.issueCommand('error', args, msg);
+                }
+            });
+        }
+    }
+    core_1.endGroup();
+}
+exports.reportTestResults = reportTestResults;
 
 
 /***/ }),
