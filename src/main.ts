@@ -3,7 +3,7 @@ import * as core from '@actions/core';
 import { getGithubToken, hasBooleanArg } from './args';
 import { generateCommentBody } from './coverage';
 import updateOrCreateComment from './comment';
-import runJest, { getJestCommand } from './run';
+import runJest, { getJestCommand, readTestResults } from './run';
 import { reportTestResults } from './testResults';
 
 async function main(): Promise<void> {
@@ -29,10 +29,17 @@ async function main(): Promise<void> {
   core.info('Executing jest');
 
   // execute jest
-  const results = await runJest({ cmd, cwd, coverageFilePath });
+  const statusCode = await runJest({ cmd, cwd });
+  const results = readTestResults(coverageFilePath);
 
   core.info('Reporting test results');
   reportTestResults(results);
+
+  if (statusCode !== 0) {
+    throw new Error(
+      'Jest returned non-zero exit code. Check annotations or debug output for more information.'
+    );
+  }
 
   // Return early if we should not post code coverage comment
   if (!shouldCommentCoverage) {

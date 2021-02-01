@@ -17,13 +17,11 @@ jest.mock('@actions/github', () => ({
 
 jest.mock('@actions/exec');
 
-// TODO: Reintroduce test and mock/test file system access
-describe.skip('runJest', () => {
+describe('runJest', () => {
   it('executes command', async () => {
     await runJest({
       cmd: 'yarn test',
       cwd: './',
-      coverageFilePath: 'foo.json',
     });
 
     expect(exec).toBeCalledWith('yarn test', [], {

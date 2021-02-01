@@ -5,7 +5,6 @@ import type { FormattedTestResults } from '@jest/test-result/build/types';
 import { debug, endGroup, startGroup } from '@actions/core';
 
 export type RunJestOptions = {
-  coverageFilePath: string;
   cmd: string;
   cwd: string;
 };
@@ -20,16 +19,19 @@ export type GetJestCommandArgs = MakeJestArgs & {
   baseCommand: string;
 };
 
-export default async function runJest({
-  cmd,
-  cwd,
-  coverageFilePath,
-}: RunJestOptions): Promise<FormattedTestResults> {
+export default async function runJest({ cmd, cwd }: RunJestOptions): Promise<number> {
   startGroup('Jest output');
+
   const statusCode = await exec(cmd, [], { cwd, ignoreReturnCode: true });
+
   debug(`Jest exited with status code: ${statusCode}`);
+
   endGroup();
 
+  return statusCode;
+}
+
+export function readTestResults(coverageFilePath: string): FormattedTestResults {
   const content = readFileSync(coverageFilePath, 'utf-8');
 
   const results = JSON.parse(content) as FormattedTestResults;
