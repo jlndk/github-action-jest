@@ -5,10 +5,9 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
-  collectCoverageFrom: ['src/**/*.ts'],
+  collectCoverageFrom: ['src/**/*.ts', '!src/demo_tests/*.ts'],
   clearMocks: true,
   testEnvironment: 'node',
   testRunner: 'jest-circus/runner',
   verbose: true,
-  testPathIgnorePatterns: ['<rootDir>/src/demo_tests/'],
 };
