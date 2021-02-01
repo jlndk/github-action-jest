@@ -21,6 +21,10 @@ inputs:
     describe: 'If true, the content of the code coverage comment will be printed as debug output instead of actually submitting it.'
     required: false
     default: 'false'
+  fail-action-if-jest-fails:
+    describe: 'If true, the action is marked as failed, if jest returns a non-zero exit code.'
+    required: false
+    default: 'true'
 runs:
   using: 'node12'
   main: 'dist/index.js'

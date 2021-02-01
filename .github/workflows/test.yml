@@ -65,3 +65,5 @@ jobs:
           test-command: yarn test:demo
           # Dont post code coverage for the demo tests
           coverage-comment: false
+          # Dont mark action as failed if jest returns non-zero exit code
+          fail-action-if-jest-fails: false

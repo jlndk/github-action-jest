@@ -1,6 +1,6 @@
 import path, { sep } from 'path';
 import * as core from '@actions/core';
-import { getGithubToken, hasBooleanArg } from './args';
+import { getGithubToken, getBooleanArg } from './args';
 import { generateCommentBody } from './coverage';
 import updateOrCreateComment from './comment';
 import runJest, { getJestCommand, readTestResults } from './run';
@@ -10,9 +10,10 @@ async function main(): Promise<void> {
   // Get args
   const baseCommand = core.getInput('test-command', { required: false }) ?? 'npm test';
   const workingDirectory = core.getInput('working-directory', { required: false });
-  const shouldCommentCoverage = hasBooleanArg('coverage-comment');
-  const dryRun = hasBooleanArg('dry-run');
-  const runOnlyChangedFiles = hasBooleanArg('changes-only');
+  const shouldCommentCoverage = getBooleanArg('coverage-comment');
+  const dryRun = getBooleanArg('dry-run');
+  const runOnlyChangedFiles = getBooleanArg('changes-only');
+  const exitOnJestFail = getBooleanArg('fail-action-if-jest-fails');
 
   // Compute paths
   const cwd = workingDirectory ? path.resolve(workingDirectory) : process.cwd();
@@ -35,9 +36,13 @@ async function main(): Promise<void> {
   core.info('Reporting test results');
   reportTestResults(results);
 
-  if (statusCode !== 0) {
+  if (exitOnJestFail && statusCode !== 0) {
     throw new Error(
       'Jest returned non-zero exit code. Check annotations or debug output for more information.'
+    );
+  } else if (!exitOnJestFail) {
+    core.info(
+      'Continuing even though jest failed, since "fail-action-if-jest-fails" is false.'
     );
   }
 
