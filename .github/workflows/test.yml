@@ -32,14 +32,17 @@ jobs:
       - name: Build
         run: yarn run build
 
-      - name: Run linting
-        run: yarn run lint
-
       - name: Bundle package
         run: yarn run package
 
-      - name: Run tests
-        run: yarn test
+      - name: Run linting
+        run: yarn run lint
+
+      - uses: ./
+        with:
+          test-command: yarn test
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   failing-tests:
     name: 'Failing tests (on purpose)'
@@ -60,5 +63,5 @@ jobs:
       - uses: ./
         with:
           test-command: yarn test:demo
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Dont post code coverage for the demo tests
+          coverage-comment: false
