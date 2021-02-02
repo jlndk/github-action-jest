@@ -1,4 +1,5 @@
 import { createCoverageMap, CoverageMap } from 'istanbul-lib-coverage';
+import { setOutput } from '@actions/core';
 import { toHTMLTable } from '../html';
 import { getFilesByDirectory } from './file';
 import { coverageToRow, directoriesToRows } from './format';
@@ -43,4 +44,13 @@ export function createFullTable(coverageMap: CoverageMap): string {
 
   // Generate HTML output for summary table. Also add filename as a header
   return toHTMLTable(['File', ...headers], rows);
+}
+
+export function setCoverageOutput(data: CoverageMap): void {
+  const map = createCoverageMap(data);
+  const summary = map.getCoverageSummary();
+  setOutput('branch-coverage', summary.branches.pct);
+  setOutput('line-coverage', summary.lines.pct);
+  setOutput('function-coverage', summary.functions.pct);
+  setOutput('statement-coverage', summary.statements.pct);
 }

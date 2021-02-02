@@ -2,7 +2,7 @@ import path, { sep } from 'path';
 import * as core from '@actions/core';
 import { FormattedTestResults } from '@jest/test-result/build/types';
 import { getGithubToken, getBooleanArg, getCWD } from './args';
-import { generateCommentBody } from './coverage';
+import { generateCommentBody, setCoverageOutput } from './coverage';
 import updateOrCreateComment from './comment';
 import runJest, { getJestCommand, readTestResults } from './run';
 import { reportTestResults } from './testResults';
@@ -25,14 +25,8 @@ async function main(): Promise<void> {
   reportTestResults(results);
   exitIfFailed(statusCode);
 
-  // Return early if we should not post code coverage comment
-  if (!shouldCommentCoverage) {
-    core.info('Code coverage commenting is disabled. Skipping...');
-    return;
-  }
-
   // Generate table for coverage data and output it
-  await outputCoverageTable(results);
+  await outputCoverageTable(results, shouldCommentCoverage);
 }
 
 async function executeJest(
@@ -71,11 +65,22 @@ function exitIfFailed(statusCode: number): void {
   }
 }
 
-async function outputCoverageTable({ coverageMap }: FormattedTestResults): Promise<void> {
+async function outputCoverageTable(
+  { coverageMap }: FormattedTestResults,
+  shouldCommentCoverage: boolean
+): Promise<void> {
   const dryRun = getBooleanArg('dry-run');
 
   if (!coverageMap) {
     throw new Error('Could not find coverage info in jest results file');
+  }
+
+  setCoverageOutput(coverageMap);
+
+  // Return early if we should not post code coverage comment
+  if (!shouldCommentCoverage) {
+    core.info('Code coverage commenting is disabled. Skipping...');
+    return;
   }
 
   core.info('Generating coverage table');
