@@ -1,3 +1,4 @@
+import path from 'path';
 import { getInput } from '@actions/core';
 
 export function getBooleanArg(key: string, required = false): boolean {
@@ -13,4 +14,9 @@ export function getGithubToken(): string {
   }
 
   return token;
+}
+
+export function getCWD(): string {
+  const workingDirectory = getInput('working-directory', { required: false });
+  return workingDirectory ? path.resolve(workingDirectory) : process.cwd();
 }

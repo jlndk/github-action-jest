@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import { exec } from '@actions/exec';
 import { context } from '@actions/github';
-import type { FormattedTestResults } from '@jest/test-result/build/types';
 import { debug, endGroup, startGroup } from '@actions/core';
+import { FormattedTestResults } from '@jest/test-result/build/types';
 
 export type RunJestOptions = {
   cmd: string;
@@ -34,13 +34,7 @@ export default async function runJest({ cmd, cwd }: RunJestOptions): Promise<num
 export function readTestResults(coverageFilePath: string): FormattedTestResults {
   const content = readFileSync(coverageFilePath, 'utf-8');
 
-  const results = JSON.parse(content) as FormattedTestResults;
-
-  if (!results) {
-    throw new Error('Could not read test results from file');
-  }
-
-  return results;
+  return JSON.parse(content) as FormattedTestResults;
 }
 
 export function getJestCommand({ baseCommand, ...rest }: GetJestCommandArgs): string {
@@ -61,13 +55,13 @@ export function makeJestArgs({
   withCoverage,
   runOnlyChangedFiles,
 }: MakeJestArgs): string[] {
-  const baseRef = context.payload.pull_request?.base.ref;
-
   const args = ['--testLocationInResults', '--json', `--outputFile=${coverageFilePath}`];
 
   if (withCoverage) {
     args.push('--coverage');
   }
+
+  const baseRef = context.payload.pull_request?.base.ref;
 
   if (runOnlyChangedFiles && baseRef) {
     args.push(`--changedSince=${baseRef}`);

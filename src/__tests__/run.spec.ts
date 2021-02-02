@@ -1,5 +1,17 @@
 import { exec } from '@actions/exec';
-import runJest, { makeJestArgs, getJestCommand } from '../run';
+import mockFs from 'mock-fs';
+import runJest, { makeJestArgs, getJestCommand, readTestResults } from '../run';
+
+beforeEach(() => {
+  mockFs({
+    'foobar.json': JSON.stringify({ foo: 'bar', baz: 2 }),
+    'invalid.json': 'this is invalid json',
+  });
+});
+
+afterEach(() => {
+  mockFs.restore();
+});
 
 jest.mock('@actions/github', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -15,6 +27,8 @@ jest.mock('@actions/github', () => ({
   },
 }));
 
+jest.mock('@actions/core');
+
 jest.mock('@actions/exec');
 
 describe('runJest', () => {
@@ -28,6 +42,20 @@ describe('runJest', () => {
       cwd: './',
       ignoreReturnCode: true,
     });
+  });
+});
+
+describe('readTestResults', () => {
+  it('reads and parses test results', () => {
+    const actual = readTestResults('foobar.json');
+
+    expect(actual).toEqual({ foo: 'bar', baz: 2 });
+  });
+  it('throws if not able to parse test results', () => {
+    expect(() => readTestResults('invalid.json')).toThrow();
+  });
+  it('throws if test results does not exist', () => {
+    expect(() => readTestResults('notexisting.json')).toThrow();
   });
 });
 
