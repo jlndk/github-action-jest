@@ -1,6 +1,6 @@
 import { exec } from '@actions/exec';
 import mockFs from 'mock-fs';
-import runJest, { makeJestArgs, getJestCommand, readTestResults } from '../run';
+import { makeJestArgs, getJestCommand, readTestResults, executeJest } from '../run';
 
 beforeEach(() => {
   mockFs({
@@ -31,9 +31,9 @@ jest.mock('@actions/core');
 
 jest.mock('@actions/exec');
 
-describe('runJest', () => {
+describe('executeJest', () => {
   it('executes command', async () => {
-    await runJest({
+    await executeJest({
       cmd: 'yarn test',
       cwd: './',
     });

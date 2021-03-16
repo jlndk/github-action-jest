@@ -1,14 +1,14 @@
 import { FormattedTestResults } from '@jest/test-result/build/types';
 import { startGroup, endGroup } from '@actions/core';
 import { issueCommand } from '@actions/core/lib/command';
-import { reportTestResults, printAnnotation } from '../testResults';
+import { printTestResultAnnotations, printAnnotation } from '../testResults';
 
 jest.mock('@actions/core');
 jest.mock('@actions/core/lib/command');
 
 describe('reportTestResults', () => {
   it('does nothing if numFailedTests is zero', () => {
-    reportTestResults({
+    printTestResultAnnotations({
       numFailedTests: 0,
     } as FormattedTestResults);
 
@@ -27,7 +27,7 @@ describe('reportTestResults', () => {
       ],
     } as FormattedTestResults;
 
-    reportTestResults(results);
+    printTestResultAnnotations(results);
 
     expect(startGroup).toBeCalledWith('Jest Annotations');
     expect(issueCommand).toBeCalledTimes(1);
@@ -44,7 +44,7 @@ describe('reportTestResults', () => {
       ],
     } as FormattedTestResults;
 
-    reportTestResults(results);
+    printTestResultAnnotations(results);
 
     expect(startGroup).toBeCalledWith('Jest Annotations');
     expect(issueCommand).not.toBeCalled();
@@ -57,7 +57,7 @@ describe('reportTestResults', () => {
       testResults: [{ assertionResults: [{ failureMessages: null }] }],
     } as FormattedTestResults;
 
-    reportTestResults(results);
+    printTestResultAnnotations(results);
 
     expect(startGroup).toBeCalledWith('Jest Annotations');
     expect(issueCommand).not.toBeCalled();

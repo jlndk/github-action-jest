@@ -4,7 +4,7 @@ import { issueCommand } from '@actions/core/lib/command';
 
 const regex = /\((.+?):(\d+):(\d+)\)/;
 
-export function reportTestResults(result: FormattedTestResults): void {
+export function printTestResultAnnotations(result: FormattedTestResults): void {
   if (result.numFailedTests == 0) {
     return;
   }

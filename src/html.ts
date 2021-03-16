@@ -9,7 +9,7 @@ export function toHTMLTable(headers: string[], rows: string[][]): string {
   return ['<table width="100%">', headerHtml, bodyHtml, '</table>'].join('');
 }
 
-function toHTMLTableRow(
+export function toHTMLTableRow(
   rows: string[][],
   formatCellCB: (cell: string, i: number) => string,
   wrapperElement: string
