@@ -5,12 +5,12 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 9,
     sourceType: 'module',
-    project: './tsconfig.json'
+    project: './tsconfig.json',
   },
   env: {
     node: true,
     es6: true,
-    'jest/globals': true
+    'jest/globals': true,
   },
   extends: [
     'eslint:recommended',
@@ -20,21 +20,20 @@ module.exports = {
     'plugin:import/warnings',
     'plugin:import/typescript',
     'plugin:prettier/recommended',
-    'prettier/@typescript-eslint'
   ],
   rules: {
     '@typescript-eslint/explicit-function-return-type': [
       'error',
       {
-        allowExpressions: true
-      }
+        allowExpressions: true,
+      },
     ],
     '@typescript-eslint/no-unused-vars': [
       'error',
       {
-        argsIgnorePattern: '^_'
-      }
+        argsIgnorePattern: '^_',
+      },
     ],
-    'import/order': ['error']
-  }
-}
+    'import/order': ['error'],
+  },
+};
