@@ -7,7 +7,7 @@ export default async function updateOrCreateComment(
   githubToken: string,
   identifier = commentIdentifier
 ): Promise<void> {
-  const octokit = getOctokit(githubToken);
+  const octokit = getOctokit(githubToken).rest;
   const comments = await octokit.issues.listComments({
     repo: context.repo.repo,
     owner: context.repo.owner,
