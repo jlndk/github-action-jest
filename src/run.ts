@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import * as core from '@actions/core';
 import { exec } from '@actions/exec';
 import { context } from '@actions/github';
@@ -22,7 +22,11 @@ export type GetJestCommandArgs = MakeJestArgs & {
 
 export type RunJestArgs = GetJestCommandArgs & {
   cwd: string;
-  exitOnJestFail: boolean;
+};
+
+export type JestExecutionResult = {
+  statusCode: number;
+  testResults?: FormattedTestResults;
 };
 
 export default async function runJest({
@@ -31,8 +35,7 @@ export default async function runJest({
   runOnlyChangedFiles,
   withCoverage,
   cwd,
-  exitOnJestFail,
-}: RunJestArgs): Promise<FormattedTestResults> {
+}: RunJestArgs): Promise<JestExecutionResult> {
   // Make the jest command
   const cmd = getJestCommand({
     coverageFilePath,
@@ -42,9 +45,11 @@ export default async function runJest({
   });
 
   const statusCode = await executeJest({ cmd, cwd });
-  exitIfFailed(statusCode, exitOnJestFail);
 
-  return readTestResults(coverageFilePath);
+  return {
+    statusCode,
+    testResults: readTestResults(coverageFilePath),
+  };
 }
 
 export async function executeJest({ cmd, cwd }: ExecuteJestOptions): Promise<number> {
@@ -59,9 +64,12 @@ export async function executeJest({ cmd, cwd }: ExecuteJestOptions): Promise<num
   return statusCode;
 }
 
-export function readTestResults(coverageFilePath: string): FormattedTestResults {
-  const content = readFileSync(coverageFilePath, 'utf-8');
+export function readTestResults(
+  coverageFilePath: string
+): FormattedTestResults | undefined {
+  if (!existsSync(coverageFilePath)) return undefined;
 
+  const content = readFileSync(coverageFilePath, 'utf-8');
   return JSON.parse(content) as FormattedTestResults;
 }
 
@@ -99,13 +107,14 @@ export function makeJestArgs({
 }
 
 export function exitIfFailed(statusCode: number, exitOnJestFail: boolean): void {
-  if (exitOnJestFail && statusCode !== 0) {
+  if (statusCode === 0) {
+    return;
+  }
+  if (exitOnJestFail) {
     throw new Error(
       'Jest returned non-zero exit code. Check annotations or debug output for more information.'
     );
-  }
-
-  if (!exitOnJestFail) {
+  } else {
     core.info(
       'Continuing even though jest failed, since "fail-action-if-jest-fails" is false.'
     );
