@@ -39,6 +39,6 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((err) => {
-  core.setFailed(err.message);
-});
+main();
+
+process.on('uncaughtException', (err) => core.setFailed(err));
