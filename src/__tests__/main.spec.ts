@@ -2,6 +2,7 @@ import { exec } from '@actions/exec';
 
 describe('main', () => {
   it('exists with status code 1 on failed tests', async () => {
+    jest.setTimeout(30_000);
     const statusCode = await exec('yarn run test:demo', [], {
       silent: true,
       ignoreReturnCode: true,
