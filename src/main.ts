@@ -6,8 +6,6 @@ import runJest, { exitIfFailed } from './run';
 import { printTestResultAnnotations } from './testResults';
 
 async function main(): Promise<void> {
-  core.info(`🧐 Jest Github Actions`);
-
   const shouldCommentCoverage = getBooleanArg('coverage-comment');
 
   const cwd = getCWD();

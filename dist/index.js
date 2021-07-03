@@ -269,7 +269,6 @@ const run_1 = __importStar(__nccwpck_require__(7884));
 const testResults_1 = __nccwpck_require__(2799);
 async function main() {
     var _a;
-    core.info(`🧐 Jest Github Actions`);
     const shouldCommentCoverage = args_1.getBooleanArg('coverage-comment');
     const cwd = args_1.getCWD();
     const coverageFilePath = path_1.default.join(cwd + path_1.sep, 'jest.results.json');
