@@ -1,6 +1,13 @@
 import { exec } from '@actions/exec';
+import { info } from '@actions/core';
 import mockFs from 'mock-fs';
-import { makeJestArgs, getJestCommand, readTestResults, executeJest } from '../run';
+import {
+  makeJestArgs,
+  getJestCommand,
+  readTestResults,
+  executeJest,
+  exitIfFailed,
+} from '../run';
 
 beforeEach(() => {
   mockFs({
@@ -47,15 +54,13 @@ describe('executeJest', () => {
 
 describe('readTestResults', () => {
   it('reads and parses test results', () => {
-    const actual = readTestResults('foobar.json');
-
-    expect(actual).toEqual({ foo: 'bar', baz: 2 });
+    expect(readTestResults('foobar.json')).toEqual({ foo: 'bar', baz: 2 });
+  });
+  it('returns undefined if test results does not exist', () => {
+    expect(readTestResults('notexisting.json')).toBeUndefined();
   });
   it('throws if not able to parse test results', () => {
     expect(() => readTestResults('invalid.json')).toThrow();
-  });
-  it('throws if test results does not exist', () => {
-    expect(() => readTestResults('notexisting.json')).toThrow();
   });
 });
 
@@ -123,5 +128,22 @@ describe('getJestCommand', () => {
         `${runner} test -- --testLocationInResults --json --outputFile=foo.json`
       );
     }
+  });
+});
+
+describe('exitIfFailed', () => {
+  it('completes if status code is 0 and exitOnJestFail is true', () => {
+    expect(() => exitIfFailed(0, true)).not.toThrow();
+  });
+  it('throws if status code is not 0 and exitOnJestFail is true', () => {
+    expect(() => exitIfFailed(1, true)).toThrow();
+  });
+  it('completes if status code is 0 and exitOnJestFail is false', () => {
+    expect(() => exitIfFailed(0, false)).not.toThrow();
+    expect(info).not.toBeCalledTimes(1);
+  });
+  it('completes if status code is not 0 and exitOnJestFail is false', () => {
+    expect(() => exitIfFailed(1, false)).not.toThrow();
+    expect(info).toBeCalledTimes(1);
   });
 });
