@@ -10,9 +10,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getCWD = exports.getGithubToken = exports.getBooleanArg = void 0;
+exports.hasIssueNumber = exports.getCWD = exports.getGithubToken = exports.getBooleanArg = void 0;
 const path_1 = __importDefault(__nccwpck_require__(5622));
 const core_1 = __nccwpck_require__(2186);
+const github_1 = __nccwpck_require__(5438);
 function getBooleanArg(key, required = false) {
     return Boolean(JSON.parse(core_1.getInput(key, { required })));
 }
@@ -31,6 +32,10 @@ function getCWD() {
     return workingDirectory ? path_1.default.resolve(workingDirectory) : process.cwd();
 }
 exports.getCWD = getCWD;
+function hasIssueNumber() {
+    return github_1.context.payload.number !== undefined;
+}
+exports.hasIssueNumber = hasIssueNumber;
 
 
 /***/ }),
@@ -269,6 +274,7 @@ const run_1 = __importStar(__nccwpck_require__(7884));
 const testResults_1 = __nccwpck_require__(2799);
 async function main() {
     var _a;
+    console.log('Sanity check?');
     const shouldCommentCoverage = args_1.getBooleanArg('coverage-comment');
     const cwd = args_1.getCWD();
     const coverageFilePath = path_1.default.join(cwd + path_1.sep, 'jest.results.json');
@@ -290,9 +296,14 @@ async function main() {
         core.info('Test results file not found. Cannot print annotations.');
     }
     run_1.exitIfFailed(statusCode, args_1.getBooleanArg('fail-action-if-jest-fails'));
+    console.log('Has issue number? ', args_1.hasIssueNumber());
     // Return early if we should not post code coverage comment
     if (!shouldCommentCoverage) {
         core.info('Code coverage commenting is disabled. Skipping...');
+        return;
+    }
+    else if (!args_1.hasIssueNumber()) {
+        core.info('No issue number given to this action (this might be a push instead of a PR). Skipping code coverage comment...');
         return;
     }
     // Generate table for coverage data and output it
