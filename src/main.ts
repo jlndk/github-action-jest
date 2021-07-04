@@ -6,6 +6,8 @@ import runJest, { exitIfFailed } from './run';
 import { printTestResultAnnotations } from './testResults';
 
 async function main(): Promise<void> {
+  console.log('Sanity check?');
+
   const shouldCommentCoverage = getBooleanArg('coverage-comment');
 
   const cwd = getCWD();
