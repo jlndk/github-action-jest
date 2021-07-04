@@ -1,12 +1,12 @@
 import path, { sep } from 'path';
 import * as core from '@actions/core';
-import { getBooleanArg, getCWD } from './args';
+import { getBooleanArg, getCWD, hasIssueNumber } from './args';
 import { outputCoverageResult } from './output';
 import runJest, { exitIfFailed } from './run';
 import { printTestResultAnnotations } from './testResults';
 
 async function main(): Promise<void> {
-  const shouldCommentCoverage = getBooleanArg('coverage-comment');
+  const shouldCommentCoverage = getBooleanArg('coverage-comment') && hasIssueNumber();
 
   const cwd = getCWD();
   const coverageFilePath = path.join(cwd + sep, 'jest.results.json');

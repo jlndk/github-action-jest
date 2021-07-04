@@ -1,5 +1,6 @@
 import path from 'path';
 import { getInput } from '@actions/core';
+import { context, getOctokit } from '@actions/github';
 
 export function getBooleanArg(key: string, required = false): boolean {
   return Boolean(JSON.parse(getInput(key, { required })));
@@ -19,4 +20,8 @@ export function getGithubToken(): string {
 export function getCWD(): string {
   const workingDirectory = getInput('working-directory', { required: false });
   return workingDirectory ? path.resolve(workingDirectory) : process.cwd();
+}
+
+export function hasIssueNumber(): boolean {
+  return context.payload.number !== undefined;
 }
