@@ -6,8 +6,6 @@ import runJest, { exitIfFailed } from './run';
 import { printTestResultAnnotations } from './testResults';
 
 async function main(): Promise<void> {
-  console.log('Sanity check?');
-
   const shouldCommentCoverage = getBooleanArg('coverage-comment');
 
   const cwd = getCWD();
@@ -32,8 +30,6 @@ async function main(): Promise<void> {
   }
 
   exitIfFailed(statusCode, getBooleanArg('fail-action-if-jest-fails'));
-
-  console.log('Has issue number? ', hasIssueNumber());
 
   // Return early if we should not post code coverage comment
   if (!shouldCommentCoverage) {

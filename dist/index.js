@@ -274,7 +274,6 @@ const run_1 = __importStar(__nccwpck_require__(7884));
 const testResults_1 = __nccwpck_require__(2799);
 async function main() {
     var _a;
-    console.log('Sanity check?');
     const shouldCommentCoverage = args_1.getBooleanArg('coverage-comment');
     const cwd = args_1.getCWD();
     const coverageFilePath = path_1.default.join(cwd + path_1.sep, 'jest.results.json');
@@ -296,7 +295,6 @@ async function main() {
         core.info('Test results file not found. Cannot print annotations.');
     }
     run_1.exitIfFailed(statusCode, args_1.getBooleanArg('fail-action-if-jest-fails'));
-    console.log('Has issue number? ', args_1.hasIssueNumber());
     // Return early if we should not post code coverage comment
     if (!shouldCommentCoverage) {
         core.info('Code coverage commenting is disabled. Skipping...');
