@@ -31,6 +31,8 @@ async function main(): Promise<void> {
 
   exitIfFailed(statusCode, getBooleanArg('fail-action-if-jest-fails'));
 
+  console.log('Has issue number? ', hasIssueNumber());
+
   // Return early if we should not post code coverage comment
   if (!shouldCommentCoverage) {
     core.info('Code coverage commenting is disabled. Skipping...');
