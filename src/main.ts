@@ -1,6 +1,6 @@
 import path, { sep } from 'path';
 import * as core from '@actions/core';
-import { getBooleanArg, getCWD } from './args';
+import { getBooleanArg, getCWD, hasIssueNumber } from './args';
 import { outputCoverageResult } from './output';
 import runJest, { exitIfFailed } from './run';
 import { printTestResultAnnotations } from './testResults';
@@ -34,6 +34,11 @@ async function main(): Promise<void> {
   // Return early if we should not post code coverage comment
   if (!shouldCommentCoverage) {
     core.info('Code coverage commenting is disabled. Skipping...');
+    return;
+  } else if (!hasIssueNumber()) {
+    core.info(
+      'No issue number given to this action (this might be a push instead of a PR). Skipping code coverage comment...'
+    );
     return;
   }
 
