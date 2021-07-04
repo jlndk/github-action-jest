@@ -6,7 +6,7 @@ import runJest, { exitIfFailed } from './run';
 import { printTestResultAnnotations } from './testResults';
 
 async function main(): Promise<void> {
-  const shouldCommentCoverage = getBooleanArg('coverage-comment') && hasIssueNumber();
+  const shouldCommentCoverage = getBooleanArg('coverage-comment');
 
   const cwd = getCWD();
   const coverageFilePath = path.join(cwd + sep, 'jest.results.json');
@@ -34,6 +34,11 @@ async function main(): Promise<void> {
   // Return early if we should not post code coverage comment
   if (!shouldCommentCoverage) {
     core.info('Code coverage commenting is disabled. Skipping...');
+    return;
+  } else if (!hasIssueNumber()) {
+    core.info(
+      'No issue number given to this action (this might be a push instead of a PR). Skipping code coverage comment...'
+    );
     return;
   }
 
